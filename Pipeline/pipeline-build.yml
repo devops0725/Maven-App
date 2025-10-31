@@ -1,0 +1,33 @@
+
+
+# Not a CI pipeline
+trigger: none
+
+# Reference shared template repository
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: DevOps Pipeline Templates/Templates
+    ref: feature/SonarQube-extra
+
+extends:
+  template: /pipelines/application-azure-deploy.yml@templates
+  parameters:
+    buildPool: vmss-agentpool-prod-app-ubuntu-latest
+
+    ##########
+    # Projects
+    ##########
+    mavenProjects:
+    - name: MavenApp      
+      artefacts: |
+        pom.xml
+        target/*.jar
+      goals: clean package
+      runSonarqubeScan: true
+      sonarqubeServiceConnection: devtools-sonarqube-nonprod-devops-work-program
+      sonarqubeProjectName: Maven-APP
+      sonarqubeProjectKey: Maven-App
+      sonarAdditionalProperties: |        
+        sonar.verbose=true
