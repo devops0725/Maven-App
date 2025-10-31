@@ -1,0 +1,61 @@
+# Not a CI pipeline
+trigger: none
+
+parameters:
+- name: runSonarQubeScan
+  displayName: Run SonarQube scan
+  type: boolean
+  default: false
+
+resources:
+  repositories:
+    # Reference shared template repository
+    - repository: templates
+      type: git
+      name: DevOps Pipeline Templates/Templates
+      ref: main
+    - repository: code
+      type: git
+      name: FMDS.F1
+      ref: feature/apo-migration
+      # trigger:
+      #   - master
+
+extends:
+  template: /pipelines/application-azure-deploy.yml@templates
+  parameters:
+    sourceRepositoryAlias: code
+
+    buildPool: vmss-agentpool-prod-app-windows-latest
+
+    ##########
+    # Projects
+    ##########
+    msBuildProjects:
+      - name: Web
+        path: DAFF.FMDS.sln
+        platform: Any CPU
+        # PublishUrl is passed to each project and is relative to each
+        arguments: /p:DeployOnBuild=true /p:DeployDefaultTarget=WebPublish /p:WebPublishMethod=FileSystem /p:SkipInvalidConfigurations=true /p:PublishUrl="../_PublishedWebsite"
+        artifacts: _PublishedWebsite/**    
+
+    ##########
+    # Web Apps
+    ##########
+    webApps:
+      - name: $(appServiceName)
+        package: Web/_PublishedWebsite
+        enableXmlTransform: false
+        deploymentMethod: webDeploy
+        excludeFilesFromAppData: false
+        arguments: -allowUntrusted
+
+    ##############
+    # Environments
+    ##############
+    environments:
+      - name: fmds-apps - awe-dev
+        pool: vmss-agentpool-prod-app-windows-latest
+        variablesTemplate: pipelines/variables.dev.yml
+        serviceConnection: ws-svc-web-systems-awe-dev-nonprod-fmds
+        targetResourceGroup: $(resourceGroup)
