@@ -1,0 +1,20 @@
+# Not a CI pipeline
+trigger: none
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: DevOps Pipeline Templates/Templates
+    ref: feature/SonarQube-extra
+ 
+extends:
+  template: /pipelines/repository-scanning.yml@templates
+  parameters:
+    scans:
+    - type: sonarqube
+      settings:
+        sonarqubeServiceConnection: devtools-sonarqube-nonprod-devops-work-program
+        projectName: Maven-App-Repo
+        projectKey: Maven-App-Repo
+        sonarSources: "."
